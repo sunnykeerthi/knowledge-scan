@@ -19,8 +19,7 @@ const RenderTable = ({ csvData, isProcessChange }) => {
   const processCSV = (str, delim = ",") => {
     const headers = str.slice(0, str.indexOf("\n")).split(delim);
     const rows = str.slice(str.indexOf("\n") + 1, str.length - 1).split("\n");
-    console.log(JSON.stringify(rows));
-    let nArray = rows.map((row) => {
+    let nArray = rows.map((row, idx) => {
       const values = row.split(delim);
       const eachObj = headers.reduce((obj, header, i) => {
         if (fields.includes(header)) obj[header] = values[i];
