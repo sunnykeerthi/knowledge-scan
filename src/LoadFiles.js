@@ -120,25 +120,40 @@ const Load = () => {
     return data.toLowerCase().replaceAll(/[^a-zA-Z0-9 ]/g, "");
   };
 
+  const changeColor = () => {
+    const fWrapper = document.getElementsByTagName("body")[0];
+    fWrapper.classList.toggle("dark");
+  };
+
   return (
     <div id="formWrapper">
-      <form id="csv-form">
-        <input
-          type="file"
-          accept=".csv"
-          id="csvFile"
-          multiple
-          onChange={(e) => handleChange(e)}
-        />
+      <div id="centerContent">
+        <div class="toggleContainer">
+          <label className="switch">
+            <input type="checkbox" onChange={(e) => changeColor(e)} />
+            <span className="slider round"></span>
+          </label>
+        </div>
+
+        <form id="csv-form">
+          <input
+            type="file"
+            accept=".csv"
+            id="csvFile"
+            multiple
+            onChange={(e) => handleChange(e)}
+          />
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              handleUpload();
+            }}
+          >
+            Upload your csv
+          </button>
+        </form>
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            handleUpload();
-          }}
-        >
-          Upload your csv
-        </button>
-        <button
+          className="processData"
           onClick={(e) => {
             e.preventDefault();
             processData();
@@ -146,7 +161,7 @@ const Load = () => {
         >
           Processdata
         </button>
-      </form>
+      </div>
       {isDone && allData.length >= 1 && (
         <TabContext value={value}>
           <TabList onChange={handleTabChange}>
