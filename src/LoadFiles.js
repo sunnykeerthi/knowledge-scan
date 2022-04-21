@@ -1,43 +1,173 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RenderTable from "./RenderTable";
-
-const LoadFiles = () => {
+import Tab from "@mui/material/Tab";
+import TabContext from "@mui/lab/TabContext";
+import TabList from "@mui/lab/TabList";
+import TabPanel from "@mui/lab/TabPanel";
+const fields = [
+  "Link ID",
+  "Publisher",
+  "Location Name",
+  "Location Address",
+  "Location Phone",
+  "Listing Name",
+  "Listing Address",
+  "Listing Phone",
+  "Name match",
+  "Address match",
+  "Phone match",
+];
+const Load = () => {
   const [files, setFiles] = useState([]);
-  const [processChanges, setProcessChanges] = useState(false);
-  const handleChange = async (e) => {
-    let files = Array.from(e.target.files).map((file) => {
-      let reader = new FileReader();
-      return new Promise((resolve) => {
-        reader.onload = () => resolve(reader.result);
-        reader.readAsText(file);
-      });
+  const [allData, setAllData] = useState([]);
+  const [isDone, setIsDone] = useState(false);
+  const [processingData, setProcessingData] = useState(false);
+  const [value, setValue] = useState("1");
+  const handleTabChange = (event, newValue) => {
+    setValue(newValue);
+  };
+
+  const processCSV = (str, delim = ",") => {
+    const headers = str.slice(0, str.indexOf("\n")).split(delim);
+    const rows = str.slice(str.indexOf("\n") + 1, str.length - 1).split("\n");
+    let nArray = rows.map((row) => {
+      const values = row.split(delim);
+      const eachObj = headers.reduce((obj, header, i) => {
+        if (fields.includes(header)) obj[header] = values[i];
+        return obj;
+      }, {});
+      return eachObj;
     });
-    let res = await Promise.all(files);
-    setFiles(res);
+    createKeys(nArray);
+  };
+
+  const createKeys = async (data) => {
+    const dataToSet = {
+      keys: Object.keys(data.length ? data[0] : {}),
+      values: data.filter((o) => Object.keys(o).length),
+    };
+    setAllData((prev) => [...prev, dataToSet]);
+  };
+
+  useEffect(() => {
+    if (
+      (files.length >= 1 && files.length === allData.length && !isDone) ||
+      processingData
+    ) {
+      setIsDone(true);
+    }
+  }, [allData, isDone, files, processingData]);
+
+  const handleUpload = (e) => {
+    Array.from(files).forEach((file) => {
+      const currFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target.result;
+        processCSV(text);
+      };
+      reader.readAsText(currFile);
+    });
+  };
+
+  const handleChange = (e) => {
+    e.preventDefault();
+    setFiles(e.target.files);
   };
 
   const processData = (e) => {
-    setProcessChanges(true);
+    var currData = allData;
+    setAllData([]);
+    currData.forEach((item) => {
+      let rowWithSum = item.values.map((item1) => {
+        let nameMatch, addressMatch, phoneMatch;
+        if (
+          replaceSplChars(
+            item1["Location Address"] +
+              item1["Location City"] +
+              item1["Location State"] +
+              item1["Location Zip"]
+          ) ===
+          replaceSplChars(
+            item1["Listing Address"] +
+              item1["Listing City"] +
+              item1["Listing State"] +
+              item1["Listing Zip"]
+          )
+        )
+          addressMatch = "True";
+        else addressMatch = "False";
+        if (item1["Location Phone"] === item1["Listing Phone"])
+          phoneMatch = "True";
+        else phoneMatch = "False";
+
+        if (item1["Location Name"] === item1["Listing Name"])
+          nameMatch = "True";
+        else nameMatch = "False";
+        return {
+          ...item1,
+          "Name match": nameMatch,
+          "Address match": addressMatch,
+          "Phone match": phoneMatch,
+        };
+      });
+      createKeys(rowWithSum);
+      setProcessingData(true);
+    });
+  };
+
+  const replaceSplChars = (data) => {
+    return data.toLowerCase().replaceAll(/[^a-zA-Z0-9 ]/g, "");
   };
 
   return (
-    <div>
-      <input type="file" multiple onChange={(e) => handleChange(e)} />
-      <input
-        type="button"
-        value="Submit Data"
-        onClick={(e) => processData(e)}
-      />
-      {files.length >= 1 &&
-        [...files].map((item, idx) => (
-          <RenderTable
-            key={idx}
-            isProcessChange={processChanges}
-            csvData={item}
-          />
-        ))}
+    <div id="formWrapper">
+      <form id="csv-form">
+        <input
+          type="file"
+          accept=".csv"
+          id="csvFile"
+          multiple
+          onChange={(e) => handleChange(e)}
+        />
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            handleUpload();
+          }}
+        >
+          Upload your csv
+        </button>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            processData();
+          }}
+        >
+          Processdata
+        </button>
+      </form>
+      {isDone && allData.length >= 1 && (
+        <TabContext value={value}>
+          <TabList onChange={handleTabChange}>
+            {files.length >= 1 &&
+              [...files].map((item1, idx) => (
+                <Tab label={`Label ${idx + 1}`} value={`${idx + 1}`} />
+              ))}
+          </TabList>
+          {files.length >= 1 &&
+            [...allData].map((item1, idx) => (
+              <TabPanel value={`${idx + 1}`}>
+                <RenderTable
+                  keys={item1.keys}
+                  csvArray={item1.values}
+                ></RenderTable>
+              </TabPanel>
+            ))}
+        </TabContext>
+      )}
     </div>
   );
 };
 
-export default LoadFiles;
+export default Load;
