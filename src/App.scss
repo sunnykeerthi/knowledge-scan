@@ -50,6 +50,7 @@ th {
 .dark {
   background: black;
   color: white;
+
   & button {
     color: white;
     background: transparent;
@@ -68,6 +69,7 @@ th {
   & .MuiButtonBase-root.Mui-selected {
     border: 0px;
     border-bottom: 1px solid #8fceff;
+    color: white;
   }
   & tr {
     border-bottom: 1px solid wheat;
